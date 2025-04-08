@@ -1,0 +1,618 @@
+import os
+from datetime import datetime, timedelta
+from flask import Flask, render_template, redirect, url_for, flash, request, abort
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
+from flask_login import LoginManager, UserMixin, current_user, login_user, logout_user, login_required
+from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
+from flask_wtf import FlaskForm
+from wtforms import StringField, PasswordField, SubmitField, TextAreaField, DecimalField, SelectField, DateField, IntegerField, BooleanField
+from wtforms.validators import DataRequired, Email, EqualTo, Length, ValidationError
+
+# Configuration de l'application
+app = Flask(__name__)
+app.config['SECRET_KEY'] = 'votre_cle_secrete_ici'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///tontine.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['UPLOAD_FOLDER'] = 'static/uploads'
+app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg', 'gif'}
+
+# Initialisation des extensions
+db = SQLAlchemy(app)
+migrate = Migrate(app, db)
+login_manager = LoginManager(app)
+login_manager.login_view = 'login'
+
+# Vérification des extensions de fichiers
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
+
+# Modèles de base de données
+class User(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(128))
+    wallet_balance = db.Column(db.Float, default=0.0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    tontines = db.relationship('TontineMember', backref='user', lazy=True)
+    created_tontines = db.relationship('Tontine', backref='creator', lazy=True)
+    created_fundraisers = db.relationship('Fundraiser', backref='organizer', lazy=True)
+    tontine_contributions = db.relationship('TontineContribution', backref='user', lazy=True)
+    fundraiser_contributions = db.relationship('FundraiserContribution', backref='user', lazy=True)
+    
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+    
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+class Tontine(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text)
+    amount_per_member = db.Column(db.Float, nullable=False)
+    frequency = db.Column(db.String(20), nullable=False)  # 'daily', 'weekly', 'monthly'
+    start_date = db.Column(db.Date, nullable=False)
+    max_members = db.Column(db.Integer, nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
+    creator_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    members = db.relationship('TontineMember', backref='tontine', lazy=True)
+    contributions = db.relationship('TontineContribution', backref='tontine', lazy=True)
+    beneficiary_history = db.relationship('TontineBeneficiary', backref='tontine', lazy=True)
+    
+    @property
+    def total_contributions(self):
+        return sum(c.amount for c in self.contributions if c.is_confirmed)
+    
+    @property
+    def next_round_date(self):
+        if not self.contributions:
+            return self.start_date
+        
+        last_round = max(c.created_at for c in self.contributions)
+        
+        if self.frequency == 'daily':
+            return last_round + timedelta(days=1)
+        elif self.frequency == 'weekly':
+            return last_round + timedelta(weeks=1)
+        else:  # monthly
+            next_month = last_round.month + 1
+            next_year = last_round.year
+            if next_month > 12:
+                next_month = 1
+                next_year += 1
+            return last_round.replace(month=next_month, year=next_year)
+    
+    @property
+    def current_beneficiary(self):
+        if not self.beneficiary_history:
+            return None
+        return self.beneficiary_history[-1].user
+    
+    @property
+    def contribution_months(self):
+        months = set()
+        for contrib in self.contributions:
+            months.add(contrib.created_at.strftime('%Y-%m'))
+        return sorted(months)
+    
+    @property
+    def contribution_amounts(self):
+        months = self.contribution_months
+        amounts = []
+        for month in months:
+            month_amount = sum(
+                c.amount for c in self.contributions 
+                if c.created_at.strftime('%Y-%m') == month and c.is_confirmed
+            )
+            amounts.append(month_amount)
+        return amounts
+
+class TontineMember(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    tontine_id = db.Column(db.Integer, db.ForeignKey('tontine.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
+    joined_at = db.Column(db.DateTime, default=datetime.utcnow)
+    last_contribution_date = db.Column(db.DateTime)
+
+class TontineContribution(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    tontine_id = db.Column(db.Integer, db.ForeignKey('tontine.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    is_confirmed = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class TontineBeneficiary(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    tontine_id = db.Column(db.Integer, db.ForeignKey('tontine.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    date = db.Column(db.DateTime, default=datetime.utcnow)
+
+class Fundraiser(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    target_amount = db.Column(db.Float, nullable=False)
+    current_amount = db.Column(db.Float, default=0.0)
+    end_date = db.Column(db.Date, nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
+    banner_image = db.Column(db.String(100))
+    bank_details = db.Column(db.Text)
+    organizer_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    contributions = db.relationship('FundraiserContribution', backref='fundraiser', lazy=True)
+    
+    @property
+    def contributors_count(self):
+        return len({c.user_id for c in self.contributions})
+    
+    @property
+    def contribution_ranges(self):
+        ranges = {
+            '0-5000': 0,
+            '5001-10000': 0,
+            '10001-20000': 0,
+            '20001-50000': 0,
+            '50000+': 0
+        }
+        
+        for contrib in self.contributions:
+            amount = contrib.amount
+            if amount <= 5000:
+                ranges['0-5000'] += amount
+            elif amount <= 10000:
+                ranges['5001-10000'] += amount
+            elif amount <= 20000:
+                ranges['10001-20000'] += amount
+            elif amount <= 50000:
+                ranges['20001-50000'] += amount
+            else:
+                ranges['50000+'] += amount
+        
+        return ranges
+    
+    @property
+    def timeline_data(self):
+        if not self.contributions:
+            return [], []
+        
+        start_date = self.created_at.date()
+        end_date = self.end_date
+        today = datetime.utcnow().date()
+        
+        if end_date > today:
+            end_date = today
+        
+        dates = []
+        amounts = []
+        current_amount = 0.0
+        
+        # Générer toutes les dates entre le début et la fin
+        delta = end_date - start_date
+        for i in range(delta.days + 1):
+            date = start_date + timedelta(days=i)
+            dates.append(date.strftime('%Y-%m-%d'))
+            
+            # Calculer le montant cumulé à cette date
+            daily_contrib = sum(
+                c.amount for c in self.contributions 
+                if c.created_at.date() <= date
+            )
+            amounts.append(daily_contrib)
+        
+        return dates, amounts
+
+class FundraiserContribution(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    fundraiser_id = db.Column(db.Integer, db.ForeignKey('fundraiser.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    message = db.Column(db.Text)
+    is_anonymous = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+# Formulaires
+class RegistrationForm(FlaskForm):
+    username = StringField('Nom d\'utilisateur', validators=[DataRequired(), Length(min=2, max=20)])
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    password = PasswordField('Mot de passe', validators=[DataRequired()])
+    confirm_password = PasswordField('Confirmer le mot de passe', validators=[DataRequired(), EqualTo('password')])
+    submit = SubmitField('S\'inscrire')
+    
+    def validate_username(self, username):
+        user = User.query.filter_by(username=username.data).first()
+        if user:
+            raise ValidationError('Ce nom d\'utilisateur est déjà pris. Veuillez en choisir un autre.')
+    
+    def validate_email(self, email):
+        user = User.query.filter_by(email=email.data).first()
+        if user:
+            raise ValidationError('Cet email est déjà utilisé. Veuillez en choisir un autre.')
+
+class LoginForm(FlaskForm):
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    password = PasswordField('Mot de passe', validators=[DataRequired()])
+    remember = BooleanField('Se souvenir de moi')
+    submit = SubmitField('Se connecter')
+
+class TontineForm(FlaskForm):
+    name = StringField('Nom de la tontine', validators=[DataRequired(), Length(max=100)])
+    description = TextAreaField('Description')
+    amount_per_member = DecimalField('Montant par membre (XOF)', validators=[DataRequired()])
+    frequency = SelectField('Fréquence', choices=[
+        ('daily', 'Quotidienne'),
+        ('weekly', 'Hebdomadaire'),
+        ('monthly', 'Mensuelle')
+    ], validators=[DataRequired()])
+    start_date = DateField('Date de début', validators=[DataRequired()])
+    max_members = IntegerField('Nombre maximum de membres', validators=[DataRequired()])
+    submit = SubmitField('Créer la tontine')
+
+class FundraiserForm(FlaskForm):
+    title = StringField('Titre de la collecte', validators=[DataRequired(), Length(max=100)])
+    description = TextAreaField('Description', validators=[DataRequired()])
+    target_amount = DecimalField('Montant cible (XOF)', validators=[DataRequired()])
+    end_date = DateField('Date de fin', validators=[DataRequired()])
+    banner_image = StringField('Image de bannière')
+    bank_details = TextAreaField('Coordonnées bancaires')
+    submit = SubmitField('Lancer la collecte')
+
+class TontineContributionForm(FlaskForm):
+    amount = DecimalField('Montant', validators=[DataRequired()])
+    submit = SubmitField('Payer')
+
+class FundraiserContributionForm(FlaskForm):
+    amount = DecimalField('Montant', validators=[DataRequired()])
+    message = TextAreaField('Message de soutien')
+    is_anonymous = BooleanField('Don anonyme')
+    submit = SubmitField('Faire un don')
+
+class AddMemberForm(FlaskForm):
+    email = StringField('Email du membre', validators=[DataRequired(), Email()])
+    submit = SubmitField('Inviter')
+
+# Filtres Jinja2
+@app.template_filter('format_currency')
+def format_currency(value):
+    return "{:,.0f}".format(value).replace(",", " ")
+
+@app.template_filter('format_date')
+def format_date(value):
+    return value.strftime('%d/%m/%Y')
+
+@app.template_filter('format_datetime')
+def format_datetime(value):
+    return value.strftime('%d/%m/%Y %H:%M')
+
+# Gestion des utilisateurs
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+# Routes
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+    
+    form = RegistrationForm()
+    if form.validate_on_submit():
+        user = User(username=form.username.data, email=form.email.data)
+        user.set_password(form.password.data)
+        db.session.add(user)
+        db.session.commit()
+        flash('Votre compte a été créé avec succès ! Vous pouvez maintenant vous connecter.', 'success')
+        return redirect(url_for('login'))
+    
+    return render_template('register.html', title='Inscription', form=form)
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+    
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data).first()
+        if user and user.check_password(form.password.data):
+            login_user(user, remember=form.remember.data)
+            next_page = request.args.get('next')
+            return redirect(next_page) if next_page else redirect(url_for('dashboard'))
+        else:
+            flash('Connexion échouée. Veuillez vérifier votre email et mot de passe.', 'danger')
+    
+    return render_template('login.html', title='Connexion', form=form)
+
+@app.route('/logout')
+def logout():
+    logout_user()
+    return redirect(url_for('index'))
+
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    # Tontines où l'utilisateur est membre
+    user_tontines = [m.tontine for m in current_user.tontines if m.tontine.is_active]
+    
+    # Collectes organisées par l'utilisateur
+    user_fundraisers = [f for f in current_user.created_fundraisers if f.is_active]
+    
+    # Activités récentes (simplifié pour l'exemple)
+    recent_activities = [
+        {'type': 'tontine', 'message': 'Vous avez rejoint la tontine "Solidarité mensuelle"', 'timestamp': datetime.utcnow() - timedelta(hours=2)},
+        {'type': 'fundraiser', 'message': 'Votre collecte "Achat de matériel" a reçu un don de 10 000 XOF', 'timestamp': datetime.utcnow() - timedelta(days=1)},
+        {'type': 'system', 'message': 'Bienvenue sur votre tableau de bord !', 'timestamp': datetime.utcnow() - timedelta(days=3)}
+    ]
+    
+    return render_template('dashboard.html', 
+                         active_tontines_count=len(user_tontines),
+                         active_fundraisers_count=len(user_fundraisers),
+                         tontines=user_tontines,
+                         fundraisers=user_fundraisers,
+                         recent_activities=recent_activities)
+
+@app.route('/create_tontine', methods=['GET', 'POST'])
+@login_required
+def create_tontine():
+    form = TontineForm()
+    if form.validate_on_submit():
+        tontine = Tontine(
+            name=form.name.data,
+            description=form.description.data,
+            amount_per_member=form.amount_per_member.data,
+            frequency=form.frequency.data,
+            start_date=form.start_date.data,
+            max_members=form.max_members.data,
+            creator_id=current_user.id
+        )
+        db.session.add(tontine)
+        
+        # Ajouter le créateur comme membre
+        member = TontineMember(tontine=tontine, user=current_user)
+        db.session.add(member)
+        
+        db.session.commit()
+        flash('Votre tontine a été créée avec succès !', 'success')
+        return redirect(url_for('tontine_details', tontine_id=tontine.id))
+    
+    return render_template('create_tontine.html', title='Créer une tontine', form=form)
+
+@app.route('/tontine/<int:tontine_id>')
+@login_required
+def tontine_details(tontine_id):
+    tontine = Tontine.query.get_or_404(tontine_id)
+    
+    # Vérifier si l'utilisateur est membre de la tontine
+    is_member = any(m.user_id == current_user.id for m in tontine.members)
+    if not is_member and tontine.creator_id != current_user.id:
+        abort(403)
+    
+    contribution_form = TontineContributionForm()
+    member_form = AddMemberForm()
+    
+    # Préparer les données pour le graphique
+    contribution_months = tontine.contribution_months
+    contribution_amounts = tontine.contribution_amounts
+    
+    return render_template('tontine_details.html', 
+                         tontine=tontine,
+                         contribution_form=contribution_form,
+                         member_form=member_form,
+                         contribution_months=contribution_months,
+                         contribution_amounts=contribution_amounts)
+
+@app.route('/tontine/<int:tontine_id>/add_member', methods=['POST'])
+@login_required
+def add_tontine_member(tontine_id):
+    tontine = Tontine.query.get_or_404(tontine_id)
+    
+    # Vérifier que l'utilisateur est le créateur
+    if tontine.creator_id != current_user.id:
+        abort(403)
+    
+    form = AddMemberForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data).first()
+        if not user:
+            flash('Aucun utilisateur trouvé avec cet email.', 'danger')
+            return redirect(url_for('tontine_details', tontine_id=tontine.id))
+        
+        # Vérifier si l'utilisateur est déjà membre
+        if any(m.user_id == user.id for m in tontine.members):
+            flash('Cet utilisateur est déjà membre de la tontine.', 'warning')
+            return redirect(url_for('tontine_details', tontine_id=tontine.id))
+        
+        # Vérifier si le nombre max de membres est atteint
+        if len(tontine.members) >= tontine.max_members:
+            flash('Le nombre maximum de membres a été atteint pour cette tontine.', 'danger')
+            return redirect(url_for('tontine_details', tontine_id=tontine.id))
+        
+        # Ajouter le membre
+        member = TontineMember(tontine=tontine, user=user)
+        db.session.add(member)
+        db.session.commit()
+        flash(f'{user.username} a été ajouté à la tontine avec succès !', 'success')
+    
+    return redirect(url_for('tontine_details', tontine_id=tontine.id))
+
+@app.route('/tontine/<int:tontine_id>/remove_member/<int:member_id>', methods=['POST'])
+@login_required
+def remove_tontine_member(tontine_id, member_id):
+    tontine = Tontine.query.get_or_404(tontine_id)
+    member = TontineMember.query.get_or_404(member_id)
+    
+    # Vérifier que l'utilisateur est le créateur et que le membre appartient à la tontine
+    if tontine.creator_id != current_user.id or member.tontine_id != tontine.id:
+        abort(403)
+    
+    # Ne pas permettre de se retirer soi-même
+    if member.user_id == current_user.id:
+        flash('Vous ne pouvez pas vous retirer vous-même de la tontine.', 'danger')
+        return redirect(url_for('tontine_details', tontine_id=tontine.id))
+    
+    db.session.delete(member)
+    db.session.commit()
+    flash('Le membre a été retiré de la tontine.', 'success')
+    return redirect(url_for('tontine_details', tontine_id=tontine.id))
+
+@app.route('/tontine/<int:tontine_id>/contribute', methods=['POST'])
+@login_required
+def make_tontine_contribution(tontine_id):
+    tontine = Tontine.query.get_or_404(tontine_id)
+    
+    # Vérifier si l'utilisateur est membre actif
+    is_active_member = any(
+        m.user_id == current_user.id and m.is_active 
+        for m in tontine.members
+    )
+    if not is_active_member:
+        abort(403)
+    
+    form = TontineContributionForm()
+    if form.validate_on_submit():
+        # Vérifier le solde du portefeuille (simplifié)
+        if current_user.wallet_balance < form.amount.data:
+            flash('Solde insuffisant dans votre portefeuille.', 'danger')
+            return redirect(url_for('tontine_details', tontine_id=tontine.id))
+        
+        # Créer la contribution
+        contribution = TontineContribution(
+            tontine=tontine,
+            user=current_user,
+            amount=form.amount.data,
+            is_confirmed=True  # Dans une vraie app, cela serait confirmé après paiement
+        )
+        db.session.add(contribution)
+        
+        # Mettre à jour le portefeuille
+        current_user.wallet_balance -= form.amount.data
+        
+        # Mettre à jour la date de dernière contribution du membre
+        member = next(m for m in tontine.members if m.user_id == current_user.id)
+        member.last_contribution_date = datetime.utcnow()
+        
+        db.session.commit()
+        flash('Votre contribution a été enregistrée avec succès !', 'success')
+    
+    return redirect(url_for('tontine_details', tontine_id=tontine.id))
+
+@app.route('/create_fundraiser', methods=['GET', 'POST'])
+@login_required
+def create_fundraiser():
+    form = FundraiserForm()
+    if form.validate_on_submit():
+        # Gestion du fichier image (simplifié)
+        banner_image = None
+        if 'banner_image' in request.files:
+            file = request.files['banner_image']
+            if file and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                banner_image = filename
+        
+        fundraiser = Fundraiser(
+            title=form.title.data,
+            description=form.description.data,
+            target_amount=form.target_amount.data,
+            end_date=form.end_date.data,
+            banner_image=banner_image,
+            bank_details=form.bank_details.data,
+            organizer_id=current_user.id
+        )
+        db.session.add(fundraiser)
+        db.session.commit()
+        flash('Votre collecte de fonds a été créée avec succès !', 'success')
+        return redirect(url_for('fundraiser_details', fundraiser_id=fundraiser.id))
+    
+    return render_template('create_fundraiser.html', title='Créer une collecte', form=form)
+
+@app.route('/fundraiser/<int:fundraiser_id>')
+def fundraiser_details(fundraiser_id):
+    fundraiser = Fundraiser.query.get_or_404(fundraiser_id)
+    
+    # Préparer les données pour les graphiques
+    contribution_ranges = fundraiser.contribution_ranges
+    contribution_ranges_labels = list(contribution_ranges.keys())
+    contribution_ranges_data = list(contribution_ranges.values())
+    
+    timeline_labels, timeline_data = fundraiser.timeline_data
+    
+    contribution_form = FundraiserContributionForm()
+    
+    return render_template('fundraiser_details.html',
+                         fundraiser=fundraiser,
+                         contribution_form=contribution_form,
+                         contribution_ranges_labels=contribution_ranges_labels,
+                         contribution_ranges_data=contribution_ranges_data,
+                         timeline_labels=timeline_labels,
+                         timeline_data=timeline_data)
+
+@app.route('/fundraiser/<int:fundraiser_id>/contribute', methods=['POST'])
+@login_required
+def make_fundraiser_contribution(fundraiser_id):
+    fundraiser = Fundraiser.query.get_or_404(fundraiser_id)
+    
+    if not fundraiser.is_active:
+        flash('Cette collecte n\'est plus active.', 'danger')
+        return redirect(url_for('fundraiser_details', fundraiser_id=fundraiser.id))
+    
+    form = FundraiserContributionForm()
+    if form.validate_on_submit():
+        # Vérifier le solde du portefeuille (simplifié)
+        if current_user.wallet_balance < form.amount.data:
+            flash('Solde insuffisant dans votre portefeuille.', 'danger')
+            return redirect(url_for('fundraiser_details', fundraiser_id=fundraiser.id))
+        
+        # Créer la contribution
+        contribution = FundraiserContribution(
+            fundraiser=fundraiser,
+            user=current_user,
+            amount=form.amount.data,
+            message=form.message.data,
+            is_anonymous=form.is_anonymous.data
+        )
+        db.session.add(contribution)
+        
+        # Mettre à jour le montant actuel de la collecte
+        fundraiser.current_amount += form.amount.data
+        
+        # Mettre à jour le portefeuille
+        current_user.wallet_balance -= form.amount.data
+        
+        db.session.commit()
+        flash('Merci pour votre contribution !', 'success')
+    
+    return redirect(url_for('fundraiser_details', fundraiser_id=fundraiser.id))
+
+# Gestion des erreurs
+@app.errorhandler(403)
+def forbidden_error(error):
+    return render_template('error.html', message='Accès interdit'), 403
+
+@app.errorhandler(404)
+def not_found_error(error):
+    return render_template('error.html', message='Page non trouvée'), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    db.session.rollback()
+    return render_template('error.html', message='Erreur interne du serveur'), 500
+
+# Point d'entrée
+if __name__ == '__main__':
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+    app.run(debug=True)

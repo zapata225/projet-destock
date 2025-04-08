@@ -1,0 +1,18 @@
+/car-rental
+  /static
+    /css
+      style.css
+    /js
+      script.js
+    /images
+      logo.png
+      car1.jpg ... car8.jpg
+  /templates
+    base.html
+    index.html
+    product.html
+    login.html
+    booking.html
+    confirmation.html
+    dashboard.html
+  app.py

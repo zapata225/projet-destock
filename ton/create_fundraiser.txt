@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Créer une collecte de fonds{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-md">
+    <h1 class="text-2xl font-bold text-center mb-6">Lancer une collecte de fonds</h1>
+    
+    <form method="POST" action="{{ url_for('create_fundraiser') }}" enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
+        
+        <div class="mb-4">
+            {{ form.title.label(class="block text-gray-700 mb-2") }}
+            {{ form.title(class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500") }}
+            {% for error in form.title.errors %}
+                <p class="text-red-500 text-sm mt-1">{{ error }}</p>
+            {% endfor %}
+        </div>
+        
+        <div class="mb-4">
+            {{ form.description.label(class="block text-gray-700 mb-2") }}
+            {{ form.description(class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500", rows="4") }}
+            {% for error in form.description.errors %}
+                <p class="text-red-500 text-sm mt-1">{{ error }}</p>
+            {% endfor %}
+        </div>
+        
+        <div class="grid md:grid-cols-2 gap-6">
+            <div class="mb-4">
+                {{ form.target_amount.label(class="block text-gray-700 mb-2") }}
+                <div class="relative">
+                    <span class="absolute left-3 top-2">XOF</span>
+                    {{ form.target_amount(class="w-full pl-12 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500") }}
+                </div>
+                {% for error in form.target_amount.errors %}
+                    <p class="text-red-500 text-sm mt-1">{{ error }}</p>
+                {% endfor %}
+            </div>
+            
+            <div class="mb-4">
+                {{ form.end_date.label(class="block text-gray-700 mb-2") }}
+                {{ form.end_date(class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500", type="date") }}
+                {% for error in form.end_date.errors %}
+                    <p class="text-red-500 text-sm mt-1">{{ error }}</p>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div class="mb-4">
+            {{ form.banner_image.label(class="block text-gray-700 mb-2") }}
+            {{ form.banner_image(class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500") }}
+            {% for error in form.banner_image.errors %}
+                <p class="text-red-500 text-sm mt-1">{{ error }}</p>
+            {% endfor %}
+        </div>
+        
+        <div class="mb-6">
+            {{ form.bank_details.label(class="block text-gray-700 mb-2") }}
+            {{ form.bank_details(class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500", rows="2") }}
+            <p class="text-sm text-gray-500 mt-1">Informations bancaires où les fonds seront transférés</p>
+            {% for error in form.bank_details.errors %}
+                <p class="text-red-500 text-sm mt-1">{{ error }}</p>
+            {% endfor %}
+        </div>
+        
+        <div class="flex justify-between">
+            <a href="{{ url_for('dashboard') }}" class="bg-gray-300 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-400 transition">Annuler</a>
+            <button type="submit" class="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 transition">
+                Lancer la collecte
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

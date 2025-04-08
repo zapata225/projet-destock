@@ -1,0 +1,51 @@
+// Scripts JavaScript pour l'interactivité
+document.addEventListener('DOMContentLoaded', function() {
+    // Gestion des messages flash
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(alert => {
+        setTimeout(() => {
+            alert.style.opacity = '0';
+            setTimeout(() => alert.remove(), 500);
+        }, 5000);
+    });
+    
+    // Initialisation des tooltips (si utilisés)
+    const tooltipTriggers = document.querySelectorAll('[data-tooltip]');
+    tooltipTriggers.forEach(trigger => {
+        trigger.addEventListener('mouseenter', showTooltip);
+        trigger.addEventListener('mouseleave', hideTooltip);
+    });
+});
+
+function showTooltip(e) {
+    const tooltipText = this.getAttribute('data-tooltip');
+    const tooltip = document.createElement('div');
+    tooltip.className = 'tooltip';
+    tooltip.textContent = tooltipText;
+    
+    document.body.appendChild(tooltip);
+    
+    const rect = this.getBoundingClientRect();
+    tooltip.style.left = `${rect.left + rect.width / 2 - tooltip.offsetWidth / 2}px`;
+    tooltip.style.top = `${rect.top - tooltip.offsetHeight - 5}px`;
+}
+
+function hideTooltip() {
+    const tooltip = document.querySelector('.tooltip');
+    if (tooltip) {
+        tooltip.remove();
+    }
+}
+
+// Fonction pour charger dynamiquement du contenu
+async function loadContent(url, targetElementId) {
+    try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Network response was not ok');
+        
+        const html = await response.text();
+        document.getElementById(targetElementId).innerHTML = html;
+    } catch (error) {
+        console.error('Error loading content:', error);
+    }
+}

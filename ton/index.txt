@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Accueil - TontineCollect{% endblock %}
+
+{% block content %}
+<div class="hero bg-blue-500 text-white py-20 rounded-lg shadow-lg mb-10">
+    <div class="container mx-auto text-center">
+        <h1 class="text-4xl font-bold mb-4">Bienvenue sur TontineCollect</h1>
+        <p class="text-xl mb-8">La plateforme moderne pour gérer vos tontines et collectes de fonds en toute simplicité</p>
+        <div class="flex justify-center space-x-4">
+            <a href="{{ url_for('register') }}" class="bg-white text-blue-600 px-6 py-3 rounded-lg font-bold hover:bg-gray-100 transition">Commencer</a>
+            <a href="#features" class="bg-transparent border-2 border-white px-6 py-3 rounded-lg font-bold hover:bg-white hover:text-blue-600 transition">En savoir plus</a>
+        </div>
+    </div>
+</div>
+
+<section id="features" class="mb-16">
+    <h2 class="text-3xl font-bold text-center mb-12">Nos fonctionnalités</h2>
+    <div class="grid md:grid-cols-3 gap-8">
+        <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition">
+            <div class="text-blue-500 text-4xl mb-4">💰</div>
+            <h3 class="text-xl font-bold mb-3">Tontines digitales</h3>
+            <p>Créez et gérez vos tontines en ligne avec un suivi transparent des contributions.</p>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition">
+            <div class="text-blue-500 text-4xl mb-4">🤝</div>
+            <h3 class="text-xl font-bold mb-3">Collecte de fonds</h3>
+            <p>Organisez des collectes pour vos projets personnels ou associatifs.</p>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition">
+            <div class="text-blue-500 text-4xl mb-4">🔒</div>
+            <h3 class="text-xl font-bold mb-3">Sécurité</h3>
+            <p>Vos transactions sont sécurisées et vos données protégées.</p>
+        </div>
+    </div>
+</section>
+
+<section class="bg-white p-8 rounded-lg shadow-md mb-16">
+    <h2 class="text-3xl font-bold text-center mb-8">Comment ça marche ?</h2>
+    <div class="grid md:grid-cols-3 gap-8">
+        <div class="text-center">
+            <div class="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span class="text-blue-600 text-2xl font-bold">1</span>
+            </div>
+            <h3 class="font-bold mb-2">Créez un compte</h3>
+            <p class="text-gray-600">Inscrivez-vous en quelques minutes.</p>
+        </div>
+        <div class="text-center">
+            <div class="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span class="text-blue-600 text-2xl font-bold">2</span>
+            </div>
+            <h3 class="font-bold mb-2">Lancez votre tontine ou collecte</h3>
+            <p class="text-gray-600">Configurez les paramètres selon vos besoins.</p>
+        </div>
+        <div class="text-center">
+            <div class="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span class="text-blue-600 text-2xl font-bold">3</span>
+            </div>
+            <h3 class="font-bold mb-2">Invitez des membres</h3>
+            <p class="text-gray-600">Gérez les contributions et suivez l'évolution.</p>
+        </div>
+    </div>
+</section>
+
+<div class="bg-blue-50 p-8 rounded-lg text-center">
+    <h2 class="text-2xl font-bold mb-4">Prêt à commencer ?</h2>
+    <p class="mb-6">Rejoignez des milliers d'utilisateurs qui gèrent leurs tontines et collectes en toute simplicité.</p>
+    <a href="{{ url_for('register') }}" class="bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700 transition">S'inscrire gratuitement</a>
+</div>
+{% endblock %}

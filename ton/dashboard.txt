@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}Tableau de bord{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-3xl font-bold mb-2">Bonjour, {{ current_user.username }} !</h1>
+    <p class="text-gray-600">Bienvenue sur votre tableau de bord</p>
+</div>
+
+<div class="grid md:grid-cols-3 gap-6 mb-8">
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h3 class="font-bold text-lg mb-2">Solde du portefeuille</h3>
+        <p class="text-2xl font-bold text-blue-600">{{ current_user.wallet_balance | format_currency }} XOF</p>
+        <a href="#" class="text-blue-500 hover:underline mt-2 block">Recharger</a>
+    </div>
+    
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h3 class="font-bold text-lg mb-2">Tontines actives</h3>
+        <p class="text-2xl font-bold text-green-600">{{ active_tontines_count }}</p>
+        <a href="{{ url_for('create_tontine') }}" class="text-blue-500 hover:underline mt-2 block">Créer une tontine</a>
+    </div>
+    
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h3 class="font-bold text-lg mb-2">Collectes en cours</h3>
+        <p class="text-2xl font-bold text-purple-600">{{ active_fundraisers_count }}</p>
+        <a href="{{ url_for('create_fundraiser') }}" class="text-blue-500 hover:underline mt-2 block">Lancer une collecte</a>
+    </div>
+</div>
+
+<div class="grid md:grid-cols-2 gap-6">
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold">Mes tontines</h2>
+            <a href="{{ url_for('create_tontine') }}" class="bg-blue-500 text-white px-3 py-1 rounded text-sm hover:bg-blue-600">+ Nouvelle</a>
+        </div>
+        
+        {% if tontines %}
+            <div class="space-y-4">
+                {% for tontine in tontines %}
+                <div class="border-b pb-4">
+                    <div class="flex justify-between">
+                        <h3 class="font-bold">{{ tontine.name }}</h3>
+                        <span class="text-sm {{ 'text-green-600' if tontine.is_active else 'text-gray-500' }}">
+                            {{ 'Active' if tontine.is_active else 'Terminée' }}
+                        </span>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-2">{{ tontine.description }}</p>
+                    <div class="flex justify-between text-sm">
+                        <span>Membres: {{ tontine.members | length }}</span>
+                        <span>Montant: {{ tontine.amount_per_member | format_currency }} XOF</span>
+                    </div>
+                    <a href="{{ url_for('tontine_details', tontine_id=tontine.id) }}" class="text-blue-500 text-sm hover:underline mt-2 block">Voir détails</a>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-gray-500">Vous n'avez pas encore de tontines.</p>
+        {% endif %}
+    </div>
+    
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold">Mes collectes</h2>
+            <a href="{{ url_for('create_fundraiser') }}" class="bg-purple-500 text-white px-3 py-1 rounded text-sm hover:bg-purple-600">+ Nouvelle</a>
+        </div>
+        
+        {% if fundraisers %}
+            <div class="space-y-4">
+                {% for fundraiser in fundraisers %}
+                <div class="border-b pb-4">
+                    <div class="flex justify-between">
+                        <h3 class="font-bold">{{ fundraiser.title }}</h3>
+                        <span class="text-sm {{ 'text-green-600' if fundraiser.is_active else 'text-gray-500' }}">
+                            {{ 'Active' if fundraiser.is_active else 'Terminée' }}
+                        </span>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-2">{{ fundraiser.description }}</p>
+                    <div class="flex justify-between text-sm">
+                        <span>Objectif: {{ fundraiser.target_amount | format_currency }} XOF</span>
+                        <span>Collecté: {{ fundraiser.current_amount | format_currency }} XOF</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+                        <div class="bg-purple-600 h-2.5 rounded-full" style="width: {{ (fundraiser.current_amount / fundraiser.target_amount * 100) if fundraiser.target_amount > 0 else 0 }}%"></div>
+                    </div>
+                    <a href="{{ url_for('fundraiser_details', fundraiser_id=fundraiser.id) }}" class="text-purple-500 text-sm hover:underline mt-2 block">Voir détails</a>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-gray-500">Vous n'avez pas encore de collectes.</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="mt-8 bg-white p-6 rounded-lg shadow-md">
+    <h2 class="text-xl font-bold mb-4">Activités récentes</h2>
+    {% if recent_activities %}
+        <div class="space-y-3">
+            {% for activity in recent_activities %}
+            <div class="flex items-start border-b pb-3">
+                <div class="bg-blue-100 p-2 rounded-full mr-3">
+                    <span class="text-blue-600">
+                        {% if activity.type == 'tontine' %}💰{% elif activity.type == 'fundraiser' %}🤝{% else %}🔔{% endif %}
+                    </span>
+                </div>
+                <div>
+                    <p class="text-sm">{{ activity.message }}</p>
+                    <p class="text-xs text-gray-500">{{ activity.timestamp | format_datetime }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="text-gray-500">Aucune activité récente.</p>
+    {% endif %}
+</div>
+{% endblock %}
