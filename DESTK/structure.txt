@@ -1,0 +1,26 @@
+destockage_alimentaire/
+├── app.py
+├── static/
+│   ├── css/
+│   │   └── style.css
+│   ├── js/
+│   │   └── script.js
+│   └── images/
+│       ├── pommes.jpg
+│       ├── yaourt.jpg
+│       ├── saumon.jpg
+│       ├── pates.jpg
+│       ├── bananes.jpg
+│       ├── comte.jpg
+│       ├── steak.jpg
+│       └── riz.jpg
+└── templates/
+    ├── base.html
+    ├── index.html
+    ├── produits.html
+    ├── fiche_produit.html
+    ├── panier.html
+    ├── validation.html
+    ├── paiement.html
+    ├── confirmation.html
+    └── erreur.html

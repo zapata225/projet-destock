@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}Accueil - DestockFood{% endblock %}
+
+{% block content %}
+<section class="hero bg-green-700 text-white py-16 rounded-lg shadow-lg mb-12">
+    <div class="container mx-auto px-4 text-center">
+        <h1 class="text-4xl md:text-5xl font-bold mb-6">Économisez sur des produits alimentaires de qualité</h1>
+        <p class="text-xl mb-8 max-w-2xl mx-auto">Découvrez nos offres exceptionnelles sur des produits proches de leur date limite de consommation.</p>
+        <a href="{{ url_for('produits') }}" class="bg-yellow-400 hover:bg-yellow-500 text-green-800 font-bold py-3 px-8 rounded-full text-lg transition duration-300 inline-block">Voir les produits</a>
+    </div>
+</section>
+
+<section class="mb-12">
+    <h2 class="text-3xl font-bold mb-8 text-center">Nos catégories</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <a href="{{ url_for('produits', categorie='fruits-legumes') }}" class="category-card bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition text-center">
+            <div class="text-green-600 text-4xl mb-4">
+                <i class="fas fa-apple-alt"></i>
+            </div>
+            <h3 class="font-bold text-lg">Fruits & Légumes</h3>
+        </a>
+        <a href="{{ url_for('produits', categorie='viandes-poissons') }}" class="category-card bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition text-center">
+            <div class="text-green-600 text-4xl mb-4">
+                <i class="fas fa-drumstick-bite"></i>
+            </div>
+            <h3 class="font-bold text-lg">Viandes & Poissons</h3>
+        </a>
+        <a href="{{ url_for('produits', categorie='produits-laitiers') }}" class="category-card bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition text-center">
+            <div class="text-green-600 text-4xl mb-4">
+                <i class="fas fa-cheese"></i>
+            </div>
+            <h3 class="font-bold text-lg">Produits Laitiers</h3>
+        </a>
+        <a href="{{ url_for('produits', categorie='epicerie') }}" class="category-card bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition text-center">
+            <div class="text-green-600 text-4xl mb-4">
+                <i class="fas fa-wine-bottle"></i>
+            </div>
+            <h3 class="font-bold text-lg">Épicerie</h3>
+        </a>
+    </div>
+</section>
+
+<section class="mb-12">
+    <h2 class="text-3xl font-bold mb-8 text-center">Produits en vedette</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {% for produit in produits_vedette %}
+        <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition">
+            <div class="relative">
+                <img src="{{ url_for('static', filename='images/' + produit.image) }}" alt="{{ produit.nom }}" class="w-full h-48 object-cover">
+                <div class="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                    -{{ produit.reduction }}%
+                </div>
+            </div>
+            <div class="p-4">
+                <h3 class="font-bold text-lg mb-1">{{ produit.nom }}</h3>
+                <p class="text-gray-600 text-sm mb-2">{{ produit.categorie }}</p>
+                <div class="flex justify-between items-center">
+                    <div>
+                        <span class="text-green-600 font-bold">{{ "%.2f"|format(produit.prix * (1 - produit.reduction/100)) }}€</span>
+                        {% if produit.reduction > 0 %}
+                        <span class="text-gray-400 text-sm line-through ml-2">{{ "%.2f"|format(produit.prix) }}€</span>
+                        {% endif %}
+                    </div>
+                    <button class="add-to-cart bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-full text-sm transition" data-id="{{ produit.id }}">
+                        <i class="fas fa-cart-plus"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <div class="text-center mt-6">
+        <a href="{{ url_for('produits') }}" class="text-green-600 font-semibold hover:text-green-800 transition">Voir tous les produits →</a>
+    </div>
+</section>
+
+<section class="bg-white rounded-lg shadow-md p-8 mb-12">
+    <h2 class="text-3xl font-bold mb-6 text-center">Pourquoi choisir DestockFood ?</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="text-center">
+            <div class="text-green-600 text-4xl mb-4">
+                <i class="fas fa-euro-sign"></i>
+            </div>
+            <h3 class="font-bold text-xl mb-2">Économies garanties</h3>
+            <p class="text-gray-600">Jusqu'à 70% de réduction sur des produits de qualité.</p>
+        </div>
+        <div class="text-center">
+            <div class="text-green-600 text-4xl mb-4">
+                <i class="fas fa-leaf"></i>
+            </div>
+            <h3 class="font-bold text-xl mb-2">Lutte contre le gaspillage</h3>
+            <p class="text-gray-600">Nous sauvons des produits parfaitement consommables de la destruction.</p>
+        </div>
+        <div class="text-center">
+            <div class="text-green-600 text-4xl mb-4">
+                <i class="fas fa-truck"></i>
+            </div>
+            <h3 class="font-bold text-xl mb-2">Livraison rapide</h3>
+            <p class="text-gray-600">Recevez vos produits en 24-48h dans toute la France.</p>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Ajout au panier
+    document.querySelectorAll('.add-to-cart').forEach(button => {
+        button.addEventListener('click', function() {
+            const productId = this.getAttribute('data-id');
+            axios.post('/ajouter-au-panier', {
+                product_id: productId,
+                quantity: 1
+            })
+            .then(response => {
+                // Mise à jour du compteur du panier
+                document.getElementById('cart-count').textContent = response.data.cart_count;
+                
+                // Notification
+                const notification = document.createElement('div');
+                notification.className = 'fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-50 animate-fade-in';
+                notification.textContent = 'Produit ajouté au panier !';
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.classList.add('animate-fade-out');
+                    setTimeout(() => notification.remove(), 500);
+                }, 3000);
+            })
+            .catch(error => {
+                console.error(error);
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

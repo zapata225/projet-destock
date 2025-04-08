@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+
+{% block title %}Validation de commande - DestockFood{% endblock %}
+
+{% block content %}
+<div class="flex flex-col lg:flex-row gap-8">
+    <div class="lg:w-2/3">
+        <h1 class="text-3xl font-bold mb-8">Validation de commande</h1>
+        
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
+            <div class="p-6 border-b">
+                <h2 class="text-xl font-bold flex items-center">
+                    <i class="fas fa-truck mr-3 text-green-600"></i> Livraison
+                </h2>
+            </div>
+            <div class="p-6">
+                <form id="livraison-form">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div>
+                            <label for="prenom" class="block text-gray-700 font-bold mb-2">Prénom *</label>
+                            <input type="text" id="prenom" name="prenom" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600" required>
+                        </div>
+                        <div>
+                            <label for="nom" class="block text-gray-700 font-bold mb-2">Nom *</label>
+                            <input type="text" id="nom" name="nom" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <label for="adresse" class="block text-gray-700 font-bold mb-2">Adresse *</label>
+                        <input type="text" id="adresse" name="adresse" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600" required>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                        <div>
+                            <label for="code_postal" class="block text-gray-700 font-bold mb-2">Code postal *</label>
+                            <input type="text" id="code_postal" name="code_postal" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600" required>
+                        </div>
+                        <div>
+                            <label for="ville" class="block text-gray-700 font-bold mb-2">Ville *</label>
+                            <input type="text" id="ville" name="ville" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600" required>
+                        </div>
+                        <div>
+                            <label for="pays" class="block text-gray-700 font-bold mb-2">Pays *</label>
+                            <select id="pays" name="pays" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600" required>
+                                <option value="France">France</option>
+                                <option value="Belgique">Belgique</option>
+                                <option value="Suisse">Suisse</option>
+                                <option value="Luxembourg">Luxembourg</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <label for="telephone" class="block text-gray-700 font-bold mb-2">Téléphone *</label>
+                        <input type="tel" id="telephone" name="telephone" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600" required>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <label for="email" class="block text-gray-700 font-bold mb-2">Email *</label>
+                        <input type="email" id="email" name="email" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600" required>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <label for="notes" class="block text-gray-700 font-bold mb-2">Notes de livraison (optionnel)</label>
+                        <textarea id="notes" name="notes" rows="3" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600"></textarea>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
+            <div class="p-6 border-b">
+                <h2 class="text-xl font-bold flex items-center">
+                    <i class="fas fa-credit-card mr-3 text-green-600"></i> Mode de paiement
+                </h2>
+            </div>
+            <div class="p-6">
+                <div class="space-y-4">
+                    <div class="flex items-center">
+                        <input type="radio" id="paiement-carte" name="mode_paiement" value="carte" class="mr-3" checked>
+                        <label for="paiement-carte" class="flex-1 flex items-center justify-between cursor-pointer">
+                            <div>
+                                <span class="font-bold">Carte de crédit</span>
+                                <p class="text-gray-600 text-sm">Paiement sécurisé par carte bancaire</p>
+                            </div>
+                            <div class="flex space-x-2">
+                                <i class="fab fa-cc-visa text-2xl text-gray-400"></i>
+                                <i class="fab fa-cc-mastercard text-2xl text-gray-400"></i>
+                                <i class="fab fa-cc-amex text-2xl text-gray-400"></i>
+                            </div>
+                        </label>
+                    </div>
+                    
+                    <div class="flex items-center">
+                        <input type="radio" id="paiement-paypal" name="mode_paiement" value="paypal" class="mr-3">
+                        <label for="paiement-paypal" class="flex-1 flex items-center justify-between cursor-pointer">
+                            <div>
+                                <span class="font-bold">PayPal</span>
+                                <p class="text-gray-600 text-sm">Paiement via votre compte PayPal</p>
+                            </div>
+                            <i class="fab fa-cc-paypal text-2xl text-gray-400"></i>
+                        </label>
+                    </div>
+                    
+                    <div class="flex items-center">
+                        <input type="radio" id="paiement-virement" name="mode_paiement" value="virement" class="mr-3">
+                        <label for="paiement-virement" class="flex-1 flex items-center justify-between cursor-pointer">
+                            <div>
+                                <span class="font-bold">Virement bancaire</span>
+                                <p class="text-gray-600 text-sm">Effectuez un virement bancaire</p>
+                            </div>
+                            <i class="fas fa-university text-2xl text-gray-400"></i>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="lg:w-1/3">
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden sticky top-4">
+            <div class="p-6 border-b">
+                <h2 class="text-xl font-bold">Récapitulatif</h2>
+            </div>
+            
+            <div class="p-6 border-b">
+                <div class="space-y-4">
+                    {% for item in panier_items %}
+                    <div class="flex justify-between">
+                        <div>
+                            <span class="font-bold">{{ item.produit.nom }}</span>
+                            <span class="text-gray-600 text-sm block">x{{ item.quantite }}</span>
+                        </div>
+                        <div class="font-bold">
+                            {{ "%.2f"|format(item.produit.prix * (1 - item.produit.reduction/100) * item.quantite) }}€
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="p-6 border-b">
+                <div class="space-y-3">
+                    <div class="flex justify-between">
+                        <span>Sous-total</span>
+                        <span>{{ "%.2f"|format(total_panier) }}€</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Livraison</span>
+                        <span class="text-green-600">Gratuite</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="p-6">
+                <div class="flex justify-between text-lg font-bold mb-6">
+                    <span>Total</span>
+                    <span>{{ "%.2f"|format(total_panier) }}€</span>
+                </div>
+                
+                <div class="mb-4">
+                    <div class="flex items-start">
+                        <input type="checkbox" id="conditions" name="conditions" class="mt-1 mr-2" required>
+                        <label for="conditions" class="text-sm text-gray-700">
+                            J'accepte les <a href="#" class="text-green-600 hover:underline">conditions générales de vente</a> et confirme avoir pris connaissance de la <a href="#" class="text-green-600 hover:underline">politique de retour</a>.
+                        </label>
+                    </div>
+                </div>
+                
+                <button id="valider-commande" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition">
+                    Passer la commande
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Validation de la commande
+    document.getElementById('valider-commande').addEventListener('click', function() {
+        // Vérifier que les conditions sont acceptées
+        if (!document.getElementById('conditions').checked) {
+            alert('Veuillez accepter les conditions générales de vente');
+            return;
+        }
+        
+        // Récupérer les données du formulaire
+        const formData = {
+            livraison: {
+                prenom: document.getElementById('prenom').value,
+                nom: document.getElementById('nom').value,
+                adresse: document.getElementById('adresse').value,
+                code_postal: document.getElementById('code_postal').value,
+                ville: document.getElementById('ville').value,
+                pays: document.getElementById('pays').value,
+                telephone: document.getElementById('telephone').value,
+                email: document.getElementById('email').value,
+                notes: document.getElementById('notes').value
+            },
+            paiement: document.querySelector('input[name="mode_paiement"]:checked').value
+        };
+        
+        // Envoyer les données au serveur
+        axios.post('/valider-commande', formData)
+        .then(response => {
+            // Rediriger vers la page de paiement ou de confirmation selon le mode de paiement
+            if (formData.paiement === 'carte') {
+                window.location.href = '/paiement?commande=' + response.data.commande_id;
+            } else if (formData.paiement === 'paypal') {
+                // Redirection vers PayPal
+                window.location.href = response.data.redirect_url;
+            } else if (formData.paiement === 'virement') {
+                window.location.href = '/confirmation?commande=' + response.data.commande_id + '&mode=virement';
+            }
+        })
+        .catch(error => {
+            console.error(error);
+            alert('Une erreur est survenue lors de la validation de votre commande');
+        });
+    });
+});
+</script>
+{% endblock %}

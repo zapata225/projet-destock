@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Mon panier - DestockFood{% endblock %}
+
+{% block content %}
+<h1 class="text-3xl font-bold mb-8">Mon panier</h1>
+
+{% if panier_items %}
+<div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
+    <div class="hidden md:grid grid-cols-12 bg-gray-100 p-4 font-bold">
+        <div class="col-span-5">Produit</div>
+        <div class="col-span-2 text-center">Prix unitaire</div>
+        <div class="col-span-2 text-center">Quantité</div>
+        <div class="col-span-2 text-center">Total</div>
+        <div class="col-span-1 text-center">Actions</div>
+    </div>
+    
+    <div class="divide-y">
+        {% for item in panier_items %}
+        <div class="grid grid-cols-1 md:grid-cols-12 p-4 items-center">
+            <div class="col-span-5 flex items-center mb-4 md:mb-0">
+                <img src="{{ url_for('static', filename='images/' + item.produit.image) }}" alt="{{ item.produit.nom }}" class="w-16 h-16 object-cover rounded-lg mr-4">
+                <div>
+                    <h3 class="font-bold">{{ item.produit.nom }}</h3>
+                    <p class="text-gray-600 text-sm">{{ item.produit.categorie }}</p>
+                </div>
+            </div>
+            
+            <div class="col-span-2 mb-4 md:mb-0">
+                <div class="md:hidden text-gray-600 text-sm">Prix unitaire:</div>
+                <div class="text-center">
+                    {% if item.produit.reduction > 0 %}
+                    <span class="text-green-600 font-bold">{{ "%.2f"|format(item.produit.prix * (1 - item.produit.reduction/100)) }}€</span>
+                    <span class="text-gray-400 text-sm line-through">{{ "%.2f"|format(item.produit.prix) }}€</span>
+                    {% else %}
+                    <span class="text-green-600 font-bold">{{ "%.2f"|format(item.produit.prix) }}€</span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="col-span-2 mb-4 md:mb-0">
+                <div class="md:hidden text-gray-600 text-sm">Quantité:</div>
+                <div class="flex justify-center">
+                    <div class="flex border rounded-lg overflow-hidden">
+                        <button class="update-quantity bg-gray-200 px-3 py-1" data-id="{{ item.produit.id }}" data-action="decrease">-</button>
+                        <span class="quantity w-12 text-center border-t border-b border-gray-300 px-3 py-1">{{ item.quantite }}</span>
+                        <button class="update-quantity bg-gray-200 px-3 py-1" data-id="{{ item.produit.id }}" data-action="increase" {% if item.quantite >= item.produit.stock %}disabled{% endif %}>+</button>
+                    </div>
+                </div>
+                {% if item.quantite >= item.produit.stock %}
+                <div class="text-center text-red-500 text-xs mt-1">Stock maximum atteint</div>
+                {% endif %}
+            </div>
+            
+            <div class="col-span-2 mb-4 md:mb-0">
+                <div class="md:hidden text-gray-600 text-sm">Total:</div>
+                <div class="text-center font-bold text-green-600">
+                    {{ "%.2f"|format(item.produit.prix * (1 - item.produit.reduction/100) * item.quantite) }}€
+                </div>
+            </div>
+            
+            <div class="col-span-1">
+                <div class="flex justify-center">
+                    <button class="remove-from-cart text-red-500 hover:text-red-700 transition" data-id="{{ item.produit.id }}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="bg-white rounded-lg shadow-lg overflow-hidden p-6 mb-8">
+    <div class="flex justify-between items-center">
+        <div>
+            <h3 class="font-bold text-lg">Total panier</h3>
+            <p class="text-gray-600 text-sm">Livraison calculée à l'étape suivante</p>
+        </div>
+        <div class="text-2xl font-bold text-green-600">{{ "%.2f"|format(total_panier) }}€</div>
+    </div>
+</div>
+
+<div class="flex flex-col md:flex-row justify-between">
+    <a href="{{ url_for('produits') }}" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-6 rounded-lg transition mb-4 md:mb-0 text-center">
+        <i class="fas fa-arrow-left mr-2"></i> Continuer mes achats
+    </a>
+    <a href="{{ url_for('validation') }}" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition text-center">
+        Valider mon panier <i class="fas fa-arrow-right ml-2"></i>
+    </a>
+</div>
+{% else %}
+<div class="bg-white rounded-lg shadow-lg overflow-hidden p-8 text-center">
+    <div class="text-5xl text-gray-300 mb-4">
+        <i class="fas fa-shopping-cart"></i>
+    </div>
+    <h2 class="text-2xl font-bold mb-2">Votre panier est vide</h2>
+    <p class="text-gray-600 mb-6">Parcourez nos produits et faites de bonnes affaires !</p>
+    <a href="{{ url_for('produits') }}" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg inline-block transition">
+        <i class="fas fa-store mr-2"></i> Voir les produits
+    </a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Mise à jour de la quantité
+    document.querySelectorAll('.update-quantity').forEach(button => {
+        button.addEventListener('click', function() {
+            const productId = this.getAttribute('data-id');
+            const action = this.getAttribute('data-action');
+            
+            axios.post('/maj-quantite', {
+                product_id: productId,
+                action: action
+            })
+            .then(response => {
+                // Recharger la page pour voir les changements
+                window.location.reload();
+            })
+            .catch(error => {
+                console.error(error);
+            });
+        });
+    });
+    
+    // Suppression d'un produit du panier
+    document.querySelectorAll('.remove-from-cart').forEach(button => {
+        button.addEventListener('click', function() {
+            const productId = this.getAttribute('data-id');
+            
+            if (confirm('Êtes-vous sûr de vouloir retirer ce produit de votre panier ?')) {
+                axios.post('/supprimer-du-panier', {
+                    product_id: productId
+                })
+                .then(response => {
+                    // Mise à jour du compteur du panier
+                    document.getElementById('cart-count').textContent = response.data.cart_count;
+                    
+                    // Recharger la page pour voir les changements
+                    window.location.reload();
+                })
+                .catch(error => {
+                    console.error(error);
+                });
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

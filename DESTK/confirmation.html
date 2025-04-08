@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Confirmation de commande - DestockFood{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto text-center">
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
+        <div class="p-6 bg-green-600 text-white">
+            <h1 class="text-2xl font-bold flex items-center justify-center">
+                <i class="fas fa-check-circle mr-3"></i> Commande confirmée !
+            </h1>
+        </div>
+        
+        <div class="p-8">
+            <div class="text-5xl text-green-500 mb-6">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            
+            <h2 class="text-2xl font-bold mb-4">Merci pour votre commande !</h2>
+            <p class="text-gray-600 mb-6">Votre commande #{{ commande.reference }} a été confirmée et sera traitée dans les plus brefs délais.</p>
+            
+            <div class="bg-green-50 border border-green-200 rounded-lg p-6 mb-8 text-left">
+                <h3 class="font-bold text-lg mb-4">Résumé de la commande</h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <h4 class="font-bold mb-2">Adresse de livraison</h4>
+                        <p class="text-gray-700">
+                            {{ commande.livraison.prenom }} {{ commande.livraison.nom }}<br>
+                            {{ commande.livraison.adresse }}<br>
+                            {{ commande.livraison.code_postal }} {{ commande.livraison.ville }}<br>
+                            {{ commande.livraison.pays }}
+                        </p>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-bold mb-2">Mode de paiement</h4>
+                        <p class="text-gray-700">
+                            {% if commande.mode_paiement == 'carte' %}
+                                <i class="fas fa-credit-card mr-2"></i> Carte de crédit
+                            {% elif commande.mode_paiement == 'paypal' %}
+                                <i class="fab fa-paypal mr-2"></i> PayPal
+                            {% elif commande.mode_paiement == 'virement' %}
+                                <i class="fas fa-university mr-2"></i> Virement bancaire
+                            {% endif %}
+                        </p>
+                        
+                        {% if commande.mode_paiement == 'virement' %}
+                        <div class="mt-4 bg-gray-100 p-4 rounded-lg">
+                            <h5 class="font-bold text-sm mb-2">Coordonnées bancaires :</h5>
+                            <p class="text-xs text-gray-700">
+                                DestockFood<br>
+                                IBAN: FR76 3000 4000 5000 6000 7000 800<br>
+                                BIC: BNPAFRPPXXX<br>
+                                Montant: {{ "%.2f"|format(commande.total) }}€<br>
+                                Référence: {{ commande.reference }}
+                            </p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-8">
+                <h3 class="font-bold text-lg mb-4">Détails de la commande</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th class="p-3">Produit</th>
+                                <th class="p-3 text-right">Prix unitaire</th>
+                                <th class="p-3 text-right">Quantité</th>
+                                <th class="p-3 text-right">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in commande.produits %}
+                            <tr class="border-b">
+                                <td class="p-3">{{ item.produit.nom }}</td>
+                                <td class="p-3 text-right">{{ "%.2f"|format(item.produit.prix * (1 - item.produit.reduction/100)) }}€</td>
+                                <td class="p-3 text-right">{{ item.quantite }}</td>
+                                <td class="p-3 text-right">{{ "%.2f"|format(item.produit.prix * (1 - item.produit.reduction/100) * item.quantite) }}€</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot class="bg-gray-50 font-bold">
+                            <tr>
+                                <td colspan="3" class="p-3 text-right">Sous-total</td>
+                                <td class="p-3 text-right">{{ "%.2f"|format(commande.total) }}€</td>
+                            </tr>
+                            <tr>
+                                <td colspan="3" class="p-3 text-right">Livraison</td>
+                                <td class="p-3 text-right">Gratuite</td>
+                            </tr>
+                            <tr class="text-green-600">
+                                <td colspan="3" class="p-3 text-right">Total</td>
+                                <td class="p-3 text-right">{{ "%.2f"|format(commande.total) }}€</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="flex flex-col sm:flex-row justify-center gap-4">
+                <a href="{{ url_for('produits') }}" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-lg transition inline-block text-center">
+                    <i class="fas fa-store mr-2"></i> Retour à la boutique
+                </a>
+                <a href="{{ url_for('index') }}" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition inline-block text-center">
+                    <i class="fas fa-home mr-2"></i> Retour à l'accueil
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden p-6 text-center">
+        <h3 class="font-bold text-lg mb-4">Vous avez des questions ?</h3>
+        <p class="text-gray-600 mb-4">Notre équipe est à votre disposition pour toute demande concernant votre commande.</p>
+        <a href="#" class="text-green-600 hover:text-green-800 font-semibold transition">
+            <i class="fas fa-envelope mr-2"></i> Contactez-nous
+        </a>
+    </div>
+</div>
+{% endblock %}
