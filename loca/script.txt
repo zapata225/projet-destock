@@ -1,0 +1,19 @@
+// Chatbot
+document.getElementById('chatbot').addEventListener('click', function() {
+    alert('Bienvenue! Comment puis-je vous aider?');
+});
+
+// Calendrier (utiliser une librairie comme Flatpickr en production)
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialiser le calendrier sur la page produit
+    if (document.getElementById('calendar')) {
+        // Ici vous intégrerez un vrai calendrier
+        console.log('Calendrier initialisé');
+    }
+    
+    // Animation des cartes voiture
+    const carCards = document.querySelectorAll('.car-card');
+    carCards.forEach(card => {
+        card.classList.add('car-card');
+    });
+});

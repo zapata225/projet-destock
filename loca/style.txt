@@ -1,0 +1,23 @@
+/* Styles personnalisés */
+.hero {
+    background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('../images/hero-bg.jpg');
+    background-size: cover;
+    background-position: center;
+}
+
+#chatbot {
+    transition: all 0.3s ease;
+}
+
+#chatbot:hover {
+    transform: scale(1.1);
+}
+
+.car-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.car-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}

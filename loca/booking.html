@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="py-12">
+    <div class="container mx-auto px-4">
+        <div class="flex flex-wrap -mx-4">
+            <div class="w-full lg:w-1/2 px-4 mb-8">
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <h2 class="text-2xl font-bold mb-4">Votre réservation</h2>
+                    
+                    <div class="flex items-center mb-6">
+                        <img src="{{ url_for('static', filename='images/car' ~ car.id ~ '.jpg') }}" alt="{{ car.name }}" class="w-24 h-24 object-cover rounded-lg mr-4">
+                        <div>
+                            <h3 class="text-xl font-bold">{{ car.name }}</h3>
+                            <p class="text-gray-600">{{ car.type }} • {{ car.seats }} places</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <h3 class="text-lg font-bold mb-2">Dates de location</h3>
+                        <div class="flex flex-wrap -mx-2">
+                            <div class="w-1/2 px-2 mb-4">
+                                <label class="block text-gray-700 mb-2">Date de départ</label>
+                                <input type="date" class="w-full p-3 border border-gray-300 rounded-lg">
+                            </div>
+                            <div class="w-1/2 px-2 mb-4">
+                                <label class="block text-gray-700 mb-2">Date de retour</label>
+                                <input type="date" class="w-full p-3 border border-gray-300 rounded-lg">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <h3 class="text-lg font-bold mb-2">Lieu de prise en charge</h3>
+                        <select class="w-full p-3 border border-gray-300 rounded-lg">
+                            <option>Paris - Agence centrale</option>
+                            <option>Paris - Aéroport CDG</option>
+                            <option>Paris - Aéroport Orly</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="w-full lg:w-1/2 px-4">
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <h2 class="text-2xl font-bold mb-4">Détails de paiement</h2>
+                    
+                    <div class="mb-6">
+                        <h3 class="text-lg font-bold mb-2">Options supplémentaires</h3>
+                        <div class="space-y-3">
+                            <label class="flex items-center">
+                                <input type="checkbox" class="mr-2">
+                                <span>Assurance tout risque (+€29/jour)</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="mr-2">
+                                <span>Siège bébé (+€15)</span>
+                            </label>
+                            <label class="flex items-center">
+                                <input type="checkbox" class="mr-2">
+                                <span>Conducteur supplémentaire (+€10/jour)</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <h3 class="text-lg font-bold mb-2">Récapitulatif</h3>
+                        <div class="bg-gray-100 p-4 rounded-lg">
+                            <div class="flex justify-between mb-2">
+                                <span>Location (3 jours)</span>
+                                <span>€{{ car.price * 3 }}</span>
+                            </div>
+                            <div class="flex justify-between mb-2">
+                                <span>Assurance tout risque</span>
+                                <span>€87</span>
+                            </div>
+                            <div class="flex justify-between mb-2">
+                                <span>Taxes et frais</span>
+                                <span>€45</span>
+                            </div>
+                            <div class="border-t border-gray-300 pt-2 mt-2">
+                                <div class="flex justify-between font-bold">
+                                    <span>Total</span>
+                                    <span>€{{ car.price * 3 + 87 + 45 }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <h3 class="text-lg font-bold mb-2">Informations de paiement</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-gray-700 mb-2">Numéro de carte</label>
+                                <input type="text" placeholder="1234 5678 9012 3456" class="w-full p-3 border border-gray-300 rounded-lg">
+                            </div>
+                            <div class="flex flex-wrap -mx-2">
+                                <div class="w-1/2 px-2">
+                                    <label class="block text-gray-700 mb-2">Date d'expiration</label>
+                                    <input type="text" placeholder="MM/AA" class="w-full p-3 border border-gray-300 rounded-lg">
+                                </div>
+                                <div class="w-1/2 px-2">
+                                    <label class="block text-gray-700 mb-2">CVV</label>
+                                    <input type="text" placeholder="123" class="w-full p-3 border border-gray-300 rounded-lg">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button class="w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition">Confirmer la réservation</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero bg-blue-800 text-white py-20">
+    <div class="container mx-auto px-4 text-center">
+        <h1 class="text-5xl font-bold mb-6">Louez la voiture de vos rêves</h1>
+        <p class="text-xl mb-8">Découvrez notre collection exclusive de véhicules premium</p>
+        <a href="#vehicles" class="bg-white text-blue-900 px-8 py-3 rounded-lg text-lg font-semibold hover:bg-blue-100 transition">Voir les véhicules</a>
+    </div>
+</section>
+
+<!-- Search Section -->
+<section class="search bg-white py-8 shadow-lg -mt-10 mx-8 rounded-lg relative z-10">
+    <div class="container mx-auto px-4">
+        <div class="flex flex-wrap items-center justify-center">
+            <div class="w-full md:w-1/4 px-2 mb-4">
+                <label class="block text-gray-700 mb-2">Lieu de prise en charge</label>
+                <select class="w-full p-3 border border-gray-300 rounded-lg">
+                    <option>Paris</option>
+                    <option>Lyon</option>
+                    <option>Marseille</option>
+                </select>
+            </div>
+            <div class="w-full md:w-1/4 px-2 mb-4">
+                <label class="block text-gray-700 mb-2">Date de départ</label>
+                <input type="date" class="w-full p-3 border border-gray-300 rounded-lg">
+            </div>
+            <div class="w-full md:w-1/4 px-2 mb-4">
+                <label class="block text-gray-700 mb-2">Date de retour</label>
+                <input type="date" class="w-full p-3 border border-gray-300 rounded-lg">
+            </div>
+            <div class="w-full md:w-1/4 px-2 mb-4">
+                <button class="w-full bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition mt-6">Rechercher</button>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Vehicles Section -->
+<section id="vehicles" class="py-16 bg-gray-50">
+    <div class="container mx-auto px-4">
+        <h2 class="text-3xl font-bold text-center mb-12">Notre Collection Exclusive</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <!-- Voiture 1 -->
+            <div class="bg-white rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition">
+                <img src="{{ url_for('static', filename='images/car1.jpg') }}" alt="Voiture 1" class="w-full h-48 object-cover">
+                <div class="p-6">
+                    <h3 class="text-xl font-bold mb-2">Porsche 911</h3>
+                    <div class="flex justify-between mb-4">
+                        <span class="text-gray-600"><i class="fas fa-car mr-2"></i> Sport</span>
+                        <span class="text-gray-600"><i class="fas fa-users mr-2"></i> 2 places</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-2xl font-bold">€299/jour</span>
+                        <a href="{{ url_for('product', id=1) }}" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">Détails</a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Voiture 2 à 8 (même structure) -->
+            <!-- ... -->
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-16 bg-white">
+    <div class="container mx-auto px-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="text-center p-6">
+                <div class="text-blue-600 text-4xl mb-4">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-2">Assurance Premium</h3>
+                <p class="text-gray-600">Couverture complète pour une tranquillité d'esprit totale.</p>
+            </div>
+            <div class="text-center p-6">
+                <div class="text-blue-600 text-4xl mb-4">
+                    <i class="fas fa-headset"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-2">Assistance 24/7</h3>
+                <p class="text-gray-600">Notre équipe est disponible à tout moment pour vous aider.</p>
+            </div>
+            <div class="text-center p-6">
+                <div class="text-blue-600 text-4xl mb-4">
+                    <i class="fas fa-tachometer-alt"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-2">Kilométrage Illimité</h3>
+                <p class="text-gray-600">Conduisez autant que vous le souhaitez sans restrictions.</p>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
